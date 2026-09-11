@@ -1,0 +1,409 @@
+/* ------------------------------------------------------------------
+   Fedlex — reproduction de l'interface de la plateforme de publication
+   du droit fédéral (RS 220, Code des obligations).
+   Jetons de couleur relevés sur www.fedlex.admin.ch (styles-ZOU43H6Z.css).
+   ------------------------------------------------------------------ */
+
+:root {
+  --navy:        #2f4356;   /* barre supérieure "Toutes les autorités fédérales" */
+  --swiss-red:   #ff0000;   /* croix suisse                                      */
+  --nav-active:  #e53940;   /* onglet actif du menu principal                    */
+  --link:        #006699;   /* --app-cerulean-blue                               */
+  --link-hover:  #004b73;
+  --text:        #333333;   /* --app-dark-charcoal                               */
+  --grey-text:   #757575;   /* --app-sonic-silver                                */
+  --grey-mid:    #999999;
+  --border:      #e5e7eb;
+  --border-soft: #d5d5d5;
+  --banner-bg:   #ecfdf5;
+  --banner-bar:  #067857;
+  --banner-text: #1f2937;
+  --badge-green: #88dd88;
+  --row-alt:     #f9f9f9;   /* --app-ghost-grey                                  */
+  --focus:       #66afe9;   /* --app-malibu                                      */
+
+  --font: "Hind", "Frutiger", "Frutiger Neue LT Pro", "Helvetica Neue",
+          Helvetica, Arial, "Liberation Sans", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text);
+  background: #fff;
+}
+
+a { color: var(--link); text-decoration: none; }
+a:hover { color: var(--link-hover); text-decoration: underline; }
+
+.wrap {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-inline: 32px;
+}
+
+/* ---------- 1. Barre supérieure (autorités fédérales) ---------- */
+
+.topbar {
+  background: var(--navy);
+  color: #fff;
+  font-size: 15px;
+}
+.topbar .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 46px;
+  flex-wrap: wrap;
+}
+.topbar a { color: #fff; }
+.topbar a:hover { text-decoration: underline; }
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  flex-wrap: wrap;
+}
+.lang-list {
+  display: flex;
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lang-list a { opacity: .8; }
+.lang-list .is-active a { opacity: 1; font-weight: 600; text-decoration: underline; }
+
+/* ---------- 2. En-tête blanc (logo + Fedlex + recherche) ---------- */
+
+.masthead { border-bottom: 1px solid var(--border); background: #fff; }
+.masthead .wrap {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-block: 20px;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: flex-start; gap: 22px; }
+.brand-cross { flex: 0 0 auto; margin-top: 2px; }
+.brand-conf {
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--text);
+  white-space: nowrap;
+}
+.brand-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border-soft);
+  margin-inline: 4px;
+}
+.brand-app { line-height: 1.35; }
+.brand-app .brand-app-name { font-weight: 700; font-size: 17px; }
+.brand-app .brand-app-claim { font-weight: 700; font-size: 17px; }
+
+.masthead-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin-left: auto;
+}
+.version { font-size: 12px; color: var(--grey-text); }
+
+/* ---------- La barre de recherche ---------- */
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid transparent;
+  padding: 2px 2px 4px;
+  transition: border-color .15s ease;
+}
+.search:focus-within { border-bottom-color: var(--focus); }
+.search input {
+  font: inherit;
+  font-size: 19px;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  width: 260px;
+  text-align: right;
+}
+.search input::placeholder { color: var(--text); opacity: 1; }
+.search input:disabled { opacity: .55; }
+.search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text);
+}
+.search-btn:hover { color: var(--link); }
+.search-btn svg { display: block; }
+
+/* petit indicateur d'activité, discret */
+.search.is-busy .search-btn { color: var(--grey-mid); animation: pulse 1.1s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* ---------- 3. Bandeau vert d'information ---------- */
+
+.notice-ai { background: #fff; }
+.notice-ai .wrap { padding-block: 16px; }
+.notice-ai-inner {
+  background: var(--banner-bg);
+  border-left: 6px solid var(--banner-bar);
+  color: var(--banner-text);
+  padding: 14px 20px;
+  font-size: 15.5px;
+}
+
+/* ---------- 4. Menu principal ---------- */
+
+.mainnav { background: #fff; }
+.mainnav .wrap { padding-block: 0; }
+.mainnav ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 34px;
+  flex-wrap: wrap;
+}
+.mainnav a {
+  display: block;
+  padding: 18px 0;
+  color: var(--text);
+  font-size: 16.5px;
+  border-bottom: 3px solid transparent;
+}
+.mainnav a:hover { color: var(--link); text-decoration: none; }
+.mainnav .is-active a {
+  color: var(--nav-active);
+  border-bottom-color: var(--nav-active);
+}
+
+/* ---------- 5. Avis de maintenance ---------- */
+
+.maintenance { border-top: 1px solid var(--border); }
+.maintenance .wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding-block: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.maintenance p { margin: 0; flex: 1; }
+.maintenance .close { flex: 0 0 auto; white-space: nowrap; }
+
+/* ---------- 6. Fil d'Ariane ---------- */
+
+.breadcrumb { font-size: 15.5px; padding-block: 18px 6px; }
+.breadcrumb ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+}
+.breadcrumb li { display: flex; align-items: baseline; gap: 10px; }
+.breadcrumb .sep { color: var(--grey-mid); }
+.breadcrumb .current { color: var(--grey-text); }
+
+/* ---------- 7. Barre d'outils du document ---------- */
+
+.doctools {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0;
+  padding-block: 10px 4px;
+  font-size: 15.5px;
+  flex-wrap: wrap;
+}
+.doctools a { padding-inline: 10px; border-left: 1px solid var(--border-soft); }
+.doctools a:first-child { border-left: 0; }
+.doctools .icon { display: inline-flex; vertical-align: -3px; }
+
+/* ---------- 8. Grille contenu ---------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  padding-bottom: 80px;
+}
+
+/* ---------- Colonne de gauche ---------- */
+
+.panel {
+  border: 1px solid var(--border-soft);
+  margin-bottom: 26px;
+  background: #fff;
+}
+.panel h2 {
+  font-size: 19px;
+  margin: 0;
+  padding: 16px 18px 12px;
+}
+/* Les lignes sont des conteneurs flex : l'intitulé à gauche, la valeur à
+   droite, et la valeur passe à la ligne (alignée à droite) quand les deux
+   ne tiennent pas ensemble — comme sur Fedlex. */
+.panel table, .panel tbody { display: block; width: 100%; font-size: 15px; }
+.panel tr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 14px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--border);
+}
+.panel th, .panel td {
+  display: block;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.panel th { font-weight: 700; text-align: left; }
+.panel td { text-align: right; margin-left: auto; }
+.panel .status {
+  background: var(--badge-green);
+  border-top: 0;
+  padding-block: 8px;
+}
+.panel .status td { text-align: left; margin-left: 0; }
+.panel .langs a { margin-left: 8px; }
+.panel ul { margin: 0; padding: 0 18px 16px; list-style: none; font-size: 15px; }
+.panel ul li { padding: 7px 0; border-top: 1px solid var(--border); }
+.panel ul li:first-child { border-top: 0; }
+
+/* ---------- Colonne du document ---------- */
+
+.doc { max-width: 860px; font-size: 17px; }
+.doc-number { font-size: 40px; line-height: 1.1; margin: 0 0 22px; font-weight: 400; }
+.doc-title {
+  font-size: 40px;
+  line-height: 1.2;
+  font-weight: 400;
+  margin: 0 0 18px;
+}
+.doc-subtitle {
+  font-size: 31px;
+  line-height: 1.25;
+  font-weight: 400;
+  margin: 0 0 18px;
+}
+.doc-date { margin: 0 0 24px; }
+.doc-preamble p { margin: 0 0 6px; }
+.doc-preamble .it { font-style: italic; }
+
+.footnotes {
+  border-top: 1px solid var(--border-soft);
+  margin-top: 26px;
+  padding-top: 10px;
+  font-size: 14px;
+}
+.footnotes p { margin: 0 0 4px; }
+
+/* --- arborescence (table des matières) --- */
+
+.toc { margin-top: 34px; }
+.toc ul { list-style: none; margin: 0; padding: 0 0 0 30px; }
+.toc > ul { padding-left: 0; }
+.toc li { margin: 2px 0; }
+.toc-row { display: flex; align-items: baseline; gap: 8px; }
+.toc-toggle {
+  flex: 0 0 auto;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  line-height: 1;
+  padding: 0 2px;
+  width: 18px;
+  text-align: center;
+}
+.toc-toggle[hidden] { display: none; }
+.toc-ext { flex: 0 0 auto; color: var(--link); display: inline-flex; vertical-align: -2px; }
+.toc .lvl-1 > .toc-row > a { font-size: 29px; line-height: 1.3; }
+.toc .lvl-2 > .toc-row > a { font-size: 25px; line-height: 1.3; }
+.toc .lvl-3 > .toc-row > a { font-size: 21px; line-height: 1.35; }
+.toc .lvl-4 > .toc-row > a { font-size: 17px; }
+.toc li[aria-expanded="false"] > ul { display: none; }
+
+/* --- articles --- */
+
+.articles { margin-top: 46px; }
+.art { margin: 0 0 30px; scroll-margin-top: 24px; }
+.art-head { font-weight: 700; font-size: 17px; margin: 0 0 2px; }
+.art-note { margin: 0 0 10px; }
+.art-note span { display: block; }
+.art-body p { margin: 0 0 8px; }
+.art-body sup { font-size: .72em; vertical-align: super; line-height: 0; margin-right: 3px; }
+
+/* état "en cours de chargement" : on atténue seulement, sans rien casser */
+.art-body.is-loading { color: var(--grey-mid); }
+
+.part-head { font-size: 29px; font-weight: 400; margin: 40px 0 6px; }
+.title-head { font-size: 25px; font-weight: 400; margin: 30px 0 6px; }
+.chap-head { font-size: 21px; font-weight: 400; margin: 24px 0 14px; }
+
+/* ---------- Pied de page ---------- */
+
+.foot {
+  border-top: 1px solid var(--border);
+  background: var(--row-alt);
+  font-size: 14px;
+  color: var(--grey-text);
+}
+.foot .wrap {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding-block: 22px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Adaptation petits écrans ---------- */
+
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; gap: 30px; }
+}
+
+@media (max-width: 780px) {
+  .wrap { padding-inline: 16px; }
+  .brand-conf, .brand-sep { display: none; }
+  .masthead .wrap { padding-block: 14px; }
+  .masthead-right { align-items: stretch; width: 100%; margin-left: 0; }
+  .search input { width: 100%; text-align: left; }
+  .version { text-align: right; }
+  .mainnav ul { gap: 18px; }
+  .mainnav a { padding: 12px 0; font-size: 15px; }
+  .doc-number, .doc-title { font-size: 28px; }
+  .doc-subtitle { font-size: 22px; }
+  .toc .lvl-1 > .toc-row > a { font-size: 22px; }
+  .toc .lvl-2 > .toc-row > a { font-size: 19px; }
+  .toc .lvl-3 > .toc-row > a { font-size: 17px; }
+  .toc ul { padding-left: 18px; }
+  .doctools { justify-content: flex-start; }
+}
