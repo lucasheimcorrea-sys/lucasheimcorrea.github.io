@@ -191,7 +191,13 @@
   }
 
   function httpMessage(status, detail) {
-    if (status === 401) return "La clé enregistrée n'a pas été acceptée. Saisissez « clé » suivi de votre clé API pour la remplacer.";
+    if (/credit balance is too low/i.test(detail)) {
+      return "Le compte associé à cette clé n'a pas de crédit. Ajoutez-en sur " +
+             "console.anthropic.com, rubrique Billing, puis réessayez.";
+    }
+    if (status === 401) return "La clé enregistrée n'a pas été acceptée. Vérifiez qu'il s'agit bien de la clé " +
+                              "elle-même (elle commence par « sk-ant-api03- ») et non de son identifiant. " +
+                              "Saisissez « clé » suivi de sa valeur pour la remplacer.";
     if (status === 403) return "L'accès a été refusé pour cette clé.";
     if (status === 429) return "La limite de requêtes est atteinte. Réessayez dans un instant.";
     if (status >= 500)  return "Le service est momentanément indisponible. Réessayez dans un instant.";
@@ -243,6 +249,26 @@
     // « clé <valeur> » ou « /key <valeur> » : enregistre la clé API.
     var m = q.match(/^(?:cl[ée]|\/key)\s+(\S+)$/i);
     if (m) {
+      // Le tableau de bord affiche deux choses différentes : l'identifiant de la
+      // clé (« apikey_… »), visible en permanence, et la clé elle-même
+      // (« sk-ant-api03-… »), montrée une seule fois à la création. Seule la
+      // seconde est acceptée par l'API : on le signale tout de suite.
+      if (/^apikey[_-]/i.test(m[1])) {
+        render("Cette valeur est l'identifiant de la clé, pas la clé elle-même.\n\n" +
+               "La clé commence par « sk-ant-api03- » et n'apparaît qu'une seule fois, " +
+               "au moment de sa création. Si elle n'a pas été conservée, créez-en une " +
+               "nouvelle sur console.anthropic.com et copiez sa valeur entière.");
+        focusArticle();
+        return;
+      }
+      if (m[1].indexOf('sk-ant-') !== 0) {
+        render("Cette valeur ne ressemble pas à une clé Anthropic : une clé commence " +
+               "par « sk-ant-api03- ». Elle a tout de même été enregistrée ; en cas de " +
+               "refus, saisissez « clé » suivi de la bonne valeur.");
+        setKey(m[1]);
+        focusArticle();
+        return;
+      }
       if (setKey(m[1])) {
         render("La clé a été enregistrée sur cet appareil. Vous pouvez poser votre question.");
       } else {

@@ -25,8 +25,25 @@ Elle s'enregistre une fois par navigateur, depuis la barre de recherche elle-mê
 3. Valider. La clé est stockée dans le `localStorage` de l'appareil et n'est
    transmise qu'à `api.anthropic.com`. Elle ne transite par aucun autre serveur.
 
-Une clé Anthropic valide commence par `sk-ant-api03-`. Elle se crée sur
-<https://console.anthropic.com/settings/keys>.
+### Attention : l'identifiant n'est pas la clé
+
+La console Anthropic affiche **deux valeurs différentes** pour une même clé :
+
+| Valeur | Aspect | Visible | Utilisable |
+|---|---|---|---|
+| L'identifiant de la clé | `apikey_01Kv8xv…` | en permanence | **non** |
+| La clé elle-même (le secret) | `sk-ant-api03-…` | **une seule fois**, à la création | oui |
+
+Dans la liste des clés, le secret est masqué (`sk-ant-api03-6RR...-`) : il n'est
+pas récupérable après coup. S'il n'a pas été conservé, il faut cliquer sur
+**Créer une clé** et copier la valeur entière au moment où elle s'affiche.
+
+La page refuse d'emblée une valeur commençant par `apikey_` et l'explique, plutôt
+que de laisser partir une requête vouée à l'échec.
+
+Les clés se gèrent sur <https://console.anthropic.com/settings/keys>. Le compte doit
+par ailleurs disposer de crédits (rubrique *Billing*) : une clé valide sur un compte
+à zéro renvoie une erreur, que la page signale également en clair.
 
 ## Commandes de la barre de recherche
 
