@@ -51,12 +51,24 @@ par ailleurs disposer de crédits (rubrique *Billing*) : une clé valide sur un 
 |---|---|
 | *n'importe quelle question* | Envoie la question à Claude ; la réponse remplace le texte de l'art. 3 |
 | `clé <votre-clé>` | Enregistre la clé API sur cet appareil |
+| *la clé collée seule* | Idem : reconnue et enregistrée, jamais envoyée comme question |
 | `/reset` | Efface le fil de discussion et restaure le vrai texte de l'art. 3 |
 | `/oubli` | Supprime la clé enregistrée |
 | `Échap` | Interrompt la réponse en cours et restaure le texte d'origine |
 
+Les variantes `clé : …`, `cle=…` et `/key …` sont acceptées.
+
 La conversation garde le fil (les 20 derniers tours) le temps de l'onglet :
 fermer l'onglet repart de zéro.
+
+### Une clé ne part jamais comme question
+
+Coller sa clé dans la barre sans le mot `clé` devant l'enverrait à l'API comme
+simple texte — où elle finirait dans les journaux de requêtes et dans
+l'historique de la conversation, renvoyée à chaque tour suivant. La page s'y
+refuse : tout texte contenant `sk-ant-…` est soit reconnu comme une clé à
+enregistrer, soit bloqué avant l'envoi. L'historique est purgé des tours
+contenant une clé, y compris ceux enregistrés avant cette protection.
 
 ## Détails techniques
 

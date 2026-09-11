@@ -15,6 +15,11 @@
   var KEY_STORE = 'fedlex.rs220.k';     // localStorage : la clé API
   var MSG_STORE = 'fedlex.rs220.m';     // sessionStorage : le fil de discussion
 
+  // Reconnaît une clé Anthropic n'importe où dans un texte. Sert de garde-fou :
+  // une clé ne doit jamais partir dans le corps d'un message ni rester dans
+  // l'historique, où elle serait renvoyée à chaque tour suivant.
+  var KEY_RE = /sk-ant-[A-Za-z0-9_-]{8,}/;
+
   var SYSTEM = [
     "Tu es un assistant généraliste, précis et serviable.",
     "Réponds toujours dans la langue de l'utilisateur.",
@@ -53,13 +58,27 @@
   function setKey(k)   { return safeSet('localStorage', KEY_STORE, k); }
   function clearKey()  { safeDel('localStorage', KEY_STORE); }
 
+  // Ne conserve que des tours (question, réponse) complets et exempts de clé.
+  // Retirer un seul message laisserait un historique désaccordé, que l'API
+  // refuse : elle attend une alternance stricte commençant par « user ».
+  function withoutKeys(msgs) {
+    var out = [];
+    for (var i = 0; i + 1 < msgs.length; i += 2) {
+      var u = msgs[i], a = msgs[i + 1];
+      if (!u || !a || u.role !== 'user' || a.role !== 'assistant') continue;
+      if (typeof u.content !== 'string' || typeof a.content !== 'string') continue;
+      if (KEY_RE.test(u.content) || KEY_RE.test(a.content)) continue;
+      out.push(u, a);
+    }
+    return out;
+  }
   function getHistory() {
-    try { return JSON.parse(safeGet('sessionStorage', MSG_STORE) || '[]'); }
+    try { return withoutKeys(JSON.parse(safeGet('sessionStorage', MSG_STORE) || '[]')); }
     catch (e) { return []; }
   }
   function setHistory(m) {
     // on ne garde que les 20 derniers tours pour rester léger
-    safeSet('sessionStorage', MSG_STORE, JSON.stringify(m.slice(-20)));
+    safeSet('sessionStorage', MSG_STORE, JSON.stringify(withoutKeys(m).slice(-20)));
   }
 
   // ---------------------------------------------------------------
@@ -246,8 +265,10 @@
     if (!q) return;
     input.value = '';
 
-    // « clé <valeur> » ou « /key <valeur> » : enregistre la clé API.
-    var m = q.match(/^(?:cl[ée]|\/key)\s+(\S+)$/i);
+    // « clé <valeur> », « clé : <valeur> », « /key <valeur> » — ou la clé collée
+    // seule, sans rien devant : dans tous les cas l'intention est la même.
+    var m = q.match(/^(?:cl[ée]s?|\/key)\s*[:=]?\s*(\S+)$/i) ||
+            q.match(/^(sk-ant-[A-Za-z0-9_-]{8,}|apikey[_-]\S+)$/i);
     if (m) {
       // Le tableau de bord affiche deux choses différentes : l'identifiant de la
       // clé (« apikey_… »), visible en permanence, et la clé elle-même
@@ -292,6 +313,15 @@
       safeDel('sessionStorage', MSG_STORE);
       busy(false);
       restore();
+      return;
+    }
+
+    // Garde-fou : si le texte contient une clé, il ne part pas vers l'API.
+    if (KEY_RE.test(q)) {
+      render("Ce texte contient ce qui ressemble à une clé API : il n'a pas été envoyé.\n\n" +
+             "Pour enregistrer une clé, saisissez « clé », un espace, puis sa valeur — " +
+             "rien d'autre sur la ligne. Pour poser une question, retirez la clé du texte.");
+      focusArticle();
       return;
     }
 
