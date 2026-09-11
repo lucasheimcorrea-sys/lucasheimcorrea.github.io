@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Météo par code postal</title>
+<style>
+  :root{
+    --bg:#f6f7f9;
+    --card:#ffffff;
+    --text:#15171a;
+    --muted:#6b7280;
+    --line:#e3e6ea;
+    --accent:#2563eb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1115;
+      --card:#171a20;
+      --text:#f2f4f7;
+      --muted:#9aa3af;
+      --line:#262b33;
+      --accent:#60a5fa;
+    }
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    padding:40px 16px;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;
+  }
+  main{ max-width:520px; margin:0 auto; }
+  h1{ font-size:22px; margin:0 0 4px; }
+  .sous-titre{ color:var(--muted); font-size:14px; margin:0 0 24px; }
+
+  form{ display:flex; gap:8px; margin-bottom:20px; }
+  input{
+    flex:1; min-width:0;
+    padding:12px 14px;
+    font-size:16px;
+    color:var(--text);
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:8px;
+  }
+  input:focus{ outline:2px solid var(--accent); outline-offset:-1px; }
+  button{
+    padding:12px 18px;
+    font-size:16px;
+    font-weight:600;
+    color:#fff;
+    background:var(--accent);
+    border:0;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  button:disabled{ opacity:.55; cursor:default; }
+
+  .carte{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:20px;
+  }
+  .ville{ font-size:18px; font-weight:600; }
+  .region{ color:var(--muted); font-size:14px; margin-bottom:16px; }
+  .temp{ font-size:48px; font-weight:700; line-height:1.1; }
+  .description{ font-size:16px; margin-bottom:16px; }
+  .emoji{ font-size:40px; }
+
+  .details{ display:flex; flex-wrap:wrap; gap:12px 24px; padding-top:16px; border-top:1px solid var(--line); }
+  .details div{ font-size:14px; }
+  .details span{ display:block; color:var(--muted); font-size:12px; }
+
+  .jours{ display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--line); }
+  .jour{ flex:1; text-align:center; font-size:13px; }
+  .jour .j-emoji{ font-size:22px; }
+  .jour .j-max{ font-weight:600; }
+  .jour .j-min{ color:var(--muted); }
+
+  .erreur{ color:#dc2626; font-size:14px; }
+  @media (prefers-color-scheme: dark){ .erreur{ color:#f87171; } }
+
+  details{ margin-top:20px; font-size:13px; color:var(--muted); }
+  summary{ cursor:pointer; }
+  pre{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px;
+    overflow-x:auto;
+    font-size:12px;
+    margin-top:8px;
+    white-space:pre-wrap;
+    word-break:break-all;
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <h1>Météo par code postal</h1>
+  <p class="sous-titre">Tape un code postal français (ex : 75001, 33000, 69003).</p>
+
+  <form id="formulaire">
+    <input id="champ" type="text" inputmode="numeric" placeholder="Code postal" value="75001" required>
+    <button type="submit" id="bouton">Chercher</button>
+  </form>
+
+  <div id="resultat"></div>
+
+  <details>
+    <summary>Voir les requêtes envoyées à l'API</summary>
+    <pre id="journal">Aucune requête pour l'instant.</pre>
+  </details>
+</main>
+
+<script>
+/* ============================================================
+   COMMENT ÇA MARCHE ?
+
+   Une "API" est juste une URL qui renvoie des données (ici du
+   JSON) au lieu d'une page web. On l'appelle avec fetch().
+
+   Ce site utilise DEUX APIs d'Open-Meteo, l'une après l'autre :
+
+   1) L'API de géocodage : code postal  ->  latitude / longitude
+      https://geocoding-api.open-meteo.com/v1/search?name=75001
+
+   2) L'API de prévisions : lat/lon  ->  météo
+      https://api.open-meteo.com/v1/forecast?latitude=48.85&longitude=2.35&current=temperature_2m
+
+   Aucune clé d'API n'est nécessaire, c'est gratuit pour un usage
+   non commercial. Tout se passe dans le navigateur.
+   ============================================================ */
+
+// Le pays dans lequel on cherche le code postal.
+// Change "FR" en "BE", "CH", "DE", "US"... pour chercher ailleurs.
+const PAYS = "FR";
+
+// Les éléments HTML dont on a besoin.
+const formulaire = document.getElementById("formulaire");
+const champ      = document.getElementById("champ");
+const bouton     = document.getElementById("bouton");
+const resultat   = document.getElementById("resultat");
+const journal    = document.getElementById("journal");
+
+// Open-Meteo ne renvoie pas de texte, mais un "code météo" (norme WMO).
+// C'est à nous de le traduire en mots et en emoji.
+const CODES_METEO = {
+  0:  ["Ciel dégagé", "☀️"],
+  1:  ["Plutôt dégagé", "🌤️"],
+  2:  ["Partiellement nuageux", "⛅"],
+  3:  ["Couvert", "☁️"],
+  45: ["Brouillard", "🌫️"],
+  48: ["Brouillard givrant", "🌫️"],
+  51: ["Bruine légère", "🌦️"],
+  53: ["Bruine", "🌦️"],
+  55: ["Bruine dense", "🌦️"],
+  56: ["Bruine verglaçante", "🌧️"],
+  57: ["Bruine verglaçante dense", "🌧️"],
+  61: ["Pluie faible", "🌧️"],
+  63: ["Pluie", "🌧️"],
+  65: ["Pluie forte", "🌧️"],
+  66: ["Pluie verglaçante", "🌧️"],
+  67: ["Pluie verglaçante forte", "🌧️"],
+  71: ["Neige faible", "🌨️"],
+  73: ["Neige", "🌨️"],
+  75: ["Neige forte", "❄️"],
+  77: ["Grains de neige", "🌨️"],
+  80: ["Averses faibles", "🌦️"],
+  81: ["Averses", "🌦️"],
+  82: ["Averses violentes", "⛈️"],
+  85: ["Averses de neige", "🌨️"],
+  86: ["Fortes averses de neige", "❄️"],
+  95: ["Orage", "⛈️"],
+  96: ["Orage avec grêle", "⛈️"],
+  99: ["Orage avec forte grêle", "⛈️"]
+};
+
+function decrireCode(code){
+  return CODES_METEO[code] || ["Temps inconnu", "❓"];
+}
+
+// Petit utilitaire : on affiche les URLs appelées, pour bien voir
+// à quoi ressemble une requête d'API.
+let urlsAppelees = [];
+function noterUrl(url){
+  urlsAppelees.push(url);
+  journal.textContent = urlsAppelees.join("\n\n");
+}
+
+/* ------------------------------------------------------------
+   ÉTAPE 1 — Trouver la ville à partir du code postal
+   ------------------------------------------------------------ */
+async function chercherVille(codePostal){
+  // On construit l'URL avec ses paramètres (ce qui suit le "?").
+  const url = "https://geocoding-api.open-meteo.com/v1/search"
+            + "?name=" + encodeURIComponent(codePostal)
+            + "&count=10"
+            + "&language=fr"
+            + "&format=json"
+            + "&countryCode=" + PAYS;
+
+  noterUrl("1) Géocodage :\n" + url);
+
+  // fetch() envoie la requête. "await" attend la réponse.
+  const reponse = await fetch(url);
+  if(!reponse.ok){
+    throw new Error("L'API de géocodage a répondu " + reponse.status);
+  }
+
+  // La réponse est du texte JSON, .json() le transforme en objet JS.
+  const donnees = await reponse.json();
+
+  // Si aucune ville ne correspond, "results" n'existe même pas.
+  if(!donnees.results || donnees.results.length === 0){
+    throw new Error("Aucune ville trouvée pour le code postal " + codePostal + ".");
+  }
+
+  // L'API fait une recherche approximative : elle peut renvoyer des
+  // villes dont le code postal est juste "proche". On garde donc en
+  // priorité celle qui contient exactement le code demandé.
+  const exacte = donnees.results.find(function(ville){
+    return (ville.postcodes || []).includes(codePostal);
+  });
+
+  return exacte || donnees.results[0];
+}
+
+/* ------------------------------------------------------------
+   ÉTAPE 2 — Demander la météo pour ces coordonnées
+   ------------------------------------------------------------ */
+async function chercherMeteo(latitude, longitude){
+  const url = "https://api.open-meteo.com/v1/forecast"
+            + "?latitude=" + latitude
+            + "&longitude=" + longitude
+            // "current" = ce qu'on veut savoir sur la météo actuelle
+            + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code"
+            // "daily" = les prévisions jour par jour
+            + "&daily=weather_code,temperature_2m_max,temperature_2m_min"
+            + "&forecast_days=4"
+            // "auto" : les heures sont données dans le fuseau de la ville
+            + "&timezone=auto";
+
+  noterUrl("2) Prévisions :\n" + url);
+
+  const reponse = await fetch(url);
+  if(!reponse.ok){
+    throw new Error("L'API météo a répondu " + reponse.status);
+  }
+  return await reponse.json();
+}
+
+/* ------------------------------------------------------------
+   ÉTAPE 3 — Afficher le résultat dans la page
+   ------------------------------------------------------------ */
+function afficherMeteo(ville, meteo){
+  const actuel = meteo.current;
+  const unites = meteo.current_units;
+  const [texte, emoji] = decrireCode(actuel.weather_code);
+
+  // La région : "Île-de-France, France"
+  const region = [ville.admin1, ville.country].filter(Boolean).join(", ");
+
+  // Les prévisions des prochains jours.
+  let jours = "";
+  for(let i = 0; i < meteo.daily.time.length; i++){
+    const date = new Date(meteo.daily.time[i]);
+    const nomJour = i === 0
+      ? "Auj."
+      : date.toLocaleDateString("fr-FR", { weekday: "short" });
+    const [, emojiJour] = decrireCode(meteo.daily.weather_code[i]);
+
+    jours += '<div class="jour">'
+           +   '<div>' + nomJour + '</div>'
+           +   '<div class="j-emoji">' + emojiJour + '</div>'
+           +   '<div class="j-max">' + Math.round(meteo.daily.temperature_2m_max[i]) + '°</div>'
+           +   '<div class="j-min">' + Math.round(meteo.daily.temperature_2m_min[i]) + '°</div>'
+           + '</div>';
+  }
+
+  resultat.innerHTML =
+      '<div class="carte">'
+    +   '<div class="ville">' + ville.name + '</div>'
+    +   '<div class="region">' + region + '</div>'
+    +   '<div class="emoji">' + emoji + '</div>'
+    +   '<div class="temp">' + Math.round(actuel.temperature_2m) + unites.temperature_2m + '</div>'
+    +   '<div class="description">' + texte + '</div>'
+    +   '<div class="details">'
+    +     '<div><span>Ressenti</span>' + Math.round(actuel.apparent_temperature) + unites.apparent_temperature + '</div>'
+    +     '<div><span>Humidité</span>' + actuel.relative_humidity_2m + unites.relative_humidity_2m + '</div>'
+    +     '<div><span>Vent</span>' + Math.round(actuel.wind_speed_10m) + ' ' + unites.wind_speed_10m + '</div>'
+    +   '</div>'
+    +   '<div class="jours">' + jours + '</div>'
+    + '</div>';
+}
+
+/* ------------------------------------------------------------
+   Le chef d'orchestre : appelé quand on valide le formulaire
+   ------------------------------------------------------------ */
+async function lancerRecherche(codePostal){
+  urlsAppelees = [];
+  bouton.disabled = true;
+  resultat.innerHTML = '<div class="carte">Chargement…</div>';
+
+  try {
+    // Étape 1, puis étape 2 (la 2 a besoin du résultat de la 1).
+    const ville = await chercherVille(codePostal);
+    const meteo = await chercherMeteo(ville.latitude, ville.longitude);
+    afficherMeteo(ville, meteo);
+  } catch (erreur) {
+    // Si quoi que ce soit échoue (réseau coupé, code postal inconnu…),
+    // on atterrit ici et on explique le problème à l'utilisateur.
+    resultat.innerHTML = '<div class="carte erreur">' + erreur.message + '</div>';
+  } finally {
+    bouton.disabled = false;
+  }
+}
+
+formulaire.addEventListener("submit", function(evenement){
+  // Sans ça, le navigateur rechargerait la page.
+  evenement.preventDefault();
+  const codePostal = champ.value.trim();
+  if(codePostal) lancerRecherche(codePostal);
+});
+
+// Une première recherche au chargement, pour ne pas afficher une page vide.
+lancerRecherche(champ.value);
+</script>
+
+</body>
+</html>
